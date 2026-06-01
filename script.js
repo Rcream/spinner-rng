@@ -1,6 +1,6 @@
 const SAVE_KEY = 'spinnerRngSave';
 const SAVE_VERSION = 1;
-const SPIN_DURATION = 600;
+const SPIN_DURATION = 1800;
 
 const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
@@ -11,13 +11,12 @@ const RARITY_CLASS = { common: 'rarity-common', uncommon: 'rarity-uncommon', rar
 const RARITY_COLORS = { common: '#9e9e9e', uncommon: '#4caf50', rare: '#2196f3', epic: '#9c27b0', legendary: '#ffb300' };
 
 const SPINNERS = [
-  { id: 'basic',   name: 'Basic',   cost: 0,      mult: 1,   luckBoost: 0,  tierClass: '' },
-  { id: 'wood',    name: 'Wood',    cost: 500,    mult: 1.2, luckBoost: 1,  tierClass: 'tier-wood' },
-  { id: 'stone',   name: 'Stone',   cost: 2000,   mult: 1.5, luckBoost: 2,  tierClass: 'tier-stone' },
-  { id: 'iron',    name: 'Iron',    cost: 8000,   mult: 2,   luckBoost: 3,  tierClass: 'tier-iron' },
-  { id: 'gold',    name: 'Gold',    cost: 25000,  mult: 3,   luckBoost: 5,  tierClass: 'tier-gold' },
-  { id: 'diamond', name: 'Diamond', cost: 100000, mult: 5,   luckBoost: 8,  tierClass: 'tier-diamond' },
-  { id: 'emerald', name: 'Emerald', cost: 500000, mult: 10,  luckBoost: 12, tierClass: 'tier-emerald' },
+  { id: 'wood',    name: 'Wood',    cost: 0,      mult: 1,   luckBoost: 0,  tierClass: 'tier-wood' },
+  { id: 'stone',   name: 'Stone',   cost: 500,    mult: 1.2, luckBoost: 1,  tierClass: 'tier-stone' },
+  { id: 'iron',    name: 'Iron',    cost: 2000,   mult: 1.5, luckBoost: 2,  tierClass: 'tier-iron' },
+  { id: 'gold',    name: 'Gold',    cost: 8000,   mult: 2,   luckBoost: 3,  tierClass: 'tier-gold' },
+  { id: 'diamond', name: 'Diamond', cost: 25000,  mult: 3,   luckBoost: 5,  tierClass: 'tier-diamond' },
+  { id: 'emerald', name: 'Emerald', cost: 100000, mult: 5,   luckBoost: 8,  tierClass: 'tier-emerald' },
 ];
 
 const UPGRADES = [
@@ -40,15 +39,18 @@ const UPGRADES = [
 
 const $ = id => document.getElementById(id);
 
-let state, spinning, saveTimer, lastAutoSpin, sessionSpins, audioCtx, currentRarity;
+let state, spinning, saveTimer, lastAutoSpin, sessionSpins, audioCtx;
+let cumulativeAngle = 0;
+let pendingResult = null;
+let spinTimeout = null;
 
 function defaultState() {
   return {
     money: 0,
     totalSpins: 0,
     bestReward: 0,
-    activeSpinnerId: 'basic',
-    unlockedSpinners: ['basic'],
+    activeSpinnerId: 'wood',
+    unlockedSpinners: ['wood'],
     purchasedUpgrades: [],
     soundEnabled: true,
     version: SAVE_VERSION,
@@ -78,6 +80,10 @@ function saveState() {
 
 function getActiveSpinner() {
   return SPINNERS.find(s => s.id === state.activeSpinnerId) || SPINNERS[0];
+}
+
+function getSpinnerIndex() {
+  return SPINNERS.findIndex(s => s.id === state.activeSpinnerId);
 }
 
 function getUpgradeCount(id) {
@@ -162,6 +168,10 @@ function formatMoney(n) {
   return '$' + Math.floor(n);
 }
 
+function capitalize(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function playBeep(freq, duration) {
   if (!state.soundEnabled) return;
   try {
@@ -186,6 +196,26 @@ function playRaritySound(rarity) {
 
 function playBuySound() { playBeep(600, 100); }
 
+function generateTicks() {
+  const rotator = $('spinner-rotator');
+  rotator.querySelectorAll('.tick-mark').forEach(el => el.remove());
+
+  const vis = $('spinner-visual');
+  const size = vis.offsetWidth || 180;
+  const ringRadius = size * 0.38;
+
+  const idx = getSpinnerIndex();
+  const count = 8 + idx * 2;
+
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * 360;
+    const tick = document.createElement('div');
+    tick.className = 'tick-mark';
+    tick.style.transform = 'translateY(-' + ringRadius + 'px) rotate(' + angle + 'deg)';
+    rotator.appendChild(tick);
+  }
+}
+
 function updateHeader() {
   const mult = computeMultiplier();
   $('money-display').textContent = formatMoney(state.money);
@@ -204,23 +234,20 @@ function renderOdds() {
   });
 }
 
-function updateSpinnerVisual(rarity) {
+function updateSpinnerVisual() {
   const vis = $('spinner-visual');
-  RARITIES.forEach(r => vis.classList.remove(RARITY_CLASS[r]));
-  if (rarity) {
-    vis.classList.add(RARITY_CLASS[rarity]);
-    currentRarity = rarity;
-  }
-  const tier = getActiveSpinner().tierClass;
-  SPINNERS.forEach(s => vis.classList.remove(s.tierClass));
-  if (tier) vis.classList.add(tier);
   const label = $('spinner-result-label');
-  if (rarity) label.textContent = rarity.charAt(0).toUpperCase() + rarity.slice(1);
+  const spinner = getActiveSpinner();
+
+  label.textContent = spinner.name;
+
+  SPINNERS.forEach(s => vis.classList.remove(s.tierClass));
+  if (spinner.tierClass) vis.classList.add(spinner.tierClass);
 }
 
 function showReward(rarity, amount) {
   const el = $('last-reward');
-  el.textContent = rarity.charAt(0).toUpperCase() + rarity.slice(1) + '! +' + formatMoney(amount);
+  el.textContent = capitalize(rarity) + '! +' + formatMoney(amount);
   el.classList.add('highlight');
   el.style.color = RARITY_COLORS[rarity] || '';
   setTimeout(() => {
@@ -316,36 +343,73 @@ function renderSpinners() {
 function renderAll() {
   updateHeader();
   renderOdds();
-  updateSpinnerVisual(currentRarity);
+  updateSpinnerVisual();
   refreshButtons();
   renderUpgrades();
   renderSpinners();
 }
 
-function doSpin() {
-  if (spinning) return;
-  spinning = true;
-  refreshButtons();
-  const odds = computeOdds();
-  $('spinner-visual').classList.add('spinning');
-  playBeep(100, 80);
+function finishSpin() {
+  if (!pendingResult) return;
+  const { rarity, amount } = pendingResult;
+  pendingResult = null;
+  spinTimeout = null;
+
+  state.money += amount;
+  state.totalSpins++;
+  sessionSpins++;
+  if (amount > state.bestReward) state.bestReward = amount;
+
+  const rotator = $('spinner-rotator');
+  rotator.classList.remove('spinning');
+
+  showReward(rarity, amount);
+  playRaritySound(rarity);
+
+  const vis = $('spinner-visual');
+  RARITIES.forEach(r => vis.classList.remove(RARITY_CLASS[r]));
+  vis.classList.add(RARITY_CLASS[rarity]);
+  vis.classList.add('reveal');
   setTimeout(() => {
-    $('spinner-visual').classList.remove('spinning');
-    const rarity = resolveRarity(odds);
-    const rewards = computeRewards();
-    const mult = computeMultiplier();
-    const amount = Math.floor(rewards[rarity] * mult);
-    state.money += amount;
-    state.totalSpins++;
-    sessionSpins++;
-    if (amount > state.bestReward) state.bestReward = amount;
-    updateSpinnerVisual(rarity);
-    showReward(rarity, amount);
-    playRaritySound(rarity);
-    spinning = false;
-    renderAll();
-    saveState();
-  }, SPIN_DURATION);
+    RARITIES.forEach(r => vis.classList.remove(RARITY_CLASS[r]));
+    vis.classList.remove('reveal');
+  }, 800);
+
+  $('spinner-result-label').textContent = getActiveSpinner().name;
+
+  spinning = false;
+  lastAutoSpin = performance.now();
+  updateHeader();
+  refreshButtons();
+  saveState();
+}
+
+function doSpin() {
+  if (spinning || pendingResult || spinTimeout) return;
+
+  const odds = computeOdds();
+  const rarity = resolveRarity(odds);
+  const rewards = computeRewards();
+  const mult = computeMultiplier();
+  const amount = Math.floor(rewards[rarity] * mult);
+
+  const extraDeg = 1080 + Math.random() * 720;
+  const startAngle = cumulativeAngle;
+  cumulativeAngle += extraDeg;
+
+  RARITIES.forEach(r => $('spinner-visual').classList.remove(RARITY_CLASS[r]));
+  $('spinner-visual').classList.remove('reveal');
+  $('spinner-result-label').textContent = '...';
+
+  const rotator = $('spinner-rotator');
+  rotator.classList.add('spinning');
+  rotator.style.transform = 'rotate(' + cumulativeAngle + 'deg)';
+
+  pendingResult = { rarity, amount };
+  spinning = true;
+  spinTimeout = setTimeout(finishSpin, SPIN_DURATION);
+  refreshButtons();
+  playBeep(100, 80);
 }
 
 function buyUpgrade(upg) {
@@ -367,6 +431,7 @@ function buySpinner(sp) {
   state.money -= cost;
   state.unlockedSpinners.push(sp.id);
   state.activeSpinnerId = sp.id;
+  generateTicks();
   playBuySound();
   renderAll();
   saveState();
@@ -375,6 +440,7 @@ function buySpinner(sp) {
 function equipSpinner(sp) {
   if (!state.unlockedSpinners.includes(sp.id)) return;
   state.activeSpinnerId = sp.id;
+  generateTicks();
   playBeep(440, 80);
   renderAll();
   saveState();
@@ -404,7 +470,7 @@ function switchTab(tab) {
 }
 
 function gameLoop(timestamp) {
-  if (state.autoSpinEnabled && !spinning) {
+  if (state.autoSpinEnabled && !spinning && !pendingResult && !spinTimeout) {
     const speed = computeSpeed();
     if (timestamp - lastAutoSpin >= speed) {
       lastAutoSpin = timestamp;
@@ -418,11 +484,14 @@ function init() {
   spinning = false;
   sessionSpins = 0;
   lastAutoSpin = 0;
-  currentRarity = 'common';
+  cumulativeAngle = 0;
+  pendingResult = null;
+  spinTimeout = null;
   state = loadState();
   if (state.soundEnabled) {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {}
   }
+  generateTicks();
   $('spin-btn').addEventListener('click', doSpin);
   $('autospin-btn').addEventListener('click', toggleAutoSpin);
   $('sound-btn').addEventListener('click', toggleSound);
