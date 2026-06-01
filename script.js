@@ -375,8 +375,6 @@ function finishSpin() {
     vis.classList.remove('reveal');
   }, 800);
 
-  $('spinner-result-label').textContent = getActiveSpinner().name;
-
   spinning = false;
   lastAutoSpin = performance.now();
   updateHeader();
@@ -399,7 +397,6 @@ function doSpin() {
 
   RARITIES.forEach(r => $('spinner-visual').classList.remove(RARITY_CLASS[r]));
   $('spinner-visual').classList.remove('reveal');
-  $('spinner-result-label').textContent = '...';
 
   const rotator = $('spinner-rotator');
   rotator.classList.add('spinning');

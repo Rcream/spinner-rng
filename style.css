@@ -210,21 +210,17 @@ header {
 
 #spinner-result-label {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
   pointer-events: none;
   color: var(--text);
-  transition: color 0.4s ease;
   z-index: 2;
 }
-
-.rarity-common #spinner-result-label { color: var(--rarity-common); }
-.rarity-uncommon #spinner-result-label { color: var(--rarity-uncommon); }
-.rarity-rare #spinner-result-label { color: var(--rarity-rare); }
-.rarity-epic #spinner-result-label { color: var(--rarity-epic); }
-.rarity-legendary #spinner-result-label { color: var(--rarity-legendary); }
 
 #rarity-bar {
   display: flex;
