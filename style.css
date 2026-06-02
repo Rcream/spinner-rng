@@ -77,31 +77,6 @@ header {
   color: var(--text);
 }
 
-.reset-btn {
-  position: fixed;
-  top: 3px;
-  left: 3px;
-  z-index: 100;
-  font-family: var(--font);
-  font-size: 9px;
-  padding: 2px 7px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--surface2);
-  color: var(--text-dim);
-  cursor: pointer;
-  opacity: 0.35;
-  transition: opacity 0.2s;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.reset-btn:hover {
-  opacity: 0.85;
-  color: var(--text);
-  border-color: var(--rarity-epic);
-}
-
 #main {
   flex: 1;
   display: flex;

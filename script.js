@@ -545,18 +545,6 @@ function switchTab(tab) {
   $('panel-' + tab).classList.add('active');
 }
 
-function resetAll() {
-  if (!confirm('Reset all progress? This cannot be undone.')) return;
-  state = defaultState();
-  cumulativeAngle = 0;
-  pendingResult = null;
-  spinTimeout = null;
-  spinning = false;
-  sessionSpins = 0;
-  saveState();
-  renderAll();
-}
-
 function gameLoop(timestamp) {
   if (state.autoSpinEnabled && !spinning && !pendingResult && !spinTimeout) {
     const speed = computeSpeed();
@@ -582,8 +570,6 @@ function init() {
   $('spin-btn').addEventListener('click', doSpin);
   $('autospin-btn').addEventListener('click', toggleAutoSpin);
   $('sound-btn').addEventListener('click', toggleSound);
-  const resetBtn = $('reset-btn');
-  if (resetBtn) resetBtn.addEventListener('click', resetAll);
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
