@@ -77,6 +77,31 @@ header {
   color: var(--text);
 }
 
+.reset-btn {
+  position: fixed;
+  top: 3px;
+  left: 3px;
+  z-index: 100;
+  font-family: var(--font);
+  font-size: 9px;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface2);
+  color: var(--text-dim);
+  cursor: pointer;
+  opacity: 0.35;
+  transition: opacity 0.2s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reset-btn:hover {
+  opacity: 0.85;
+  color: var(--text);
+  border-color: var(--rarity-epic);
+}
+
 #main {
   flex: 1;
   display: flex;
@@ -460,6 +485,66 @@ header {
 .panel-item-btn.affordable {
   border-color: var(--rarity-uncommon);
   color: var(--rarity-uncommon);
+}
+
+.rebirth-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+.rebirth-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--rarity-legendary);
+}
+
+.rebirth-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.rebirth-stats {
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--text);
+}
+
+.rebirth-cost {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.rebirth-btn {
+  font-size: 15px;
+  font-weight: 700;
+  padding: 12px 24px;
+  letter-spacing: 1px;
+  background: var(--surface2);
+  border-color: var(--rarity-legendary);
+  color: var(--rarity-legendary);
+  margin-top: 4px;
+}
+
+.rebirth-btn:hover {
+  background: var(--rarity-legendary);
+  color: var(--bg);
+  border-color: var(--rarity-legendary);
+}
+
+.rebirth-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  color: var(--text-dim);
+  border-color: var(--border);
+  background: var(--surface);
+}
+
+.rebirth-btn:disabled:hover {
+  background: var(--surface);
+  color: var(--text-dim);
 }
 
 .panel-item-btn:disabled {

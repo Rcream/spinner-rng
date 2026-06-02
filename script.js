@@ -20,10 +20,6 @@ const SPINNERS = [
 ];
 
 const UPGRADES = [
-  { id: 'lucky',     name: 'Lucky Charm',       desc: '+0.5x multiplier',         baseCost: 100,   costScale: 1.5, type: 'mult',    value: 0.5 },
-  { id: 'horseshoe', name: 'Golden Horseshoe',  desc: '+1x multiplier',           baseCost: 500,   costScale: 1.6, type: 'mult',    value: 1 },
-  { id: 'clover',    name: 'Four-Leaf Clover',  desc: '+2x multiplier',           baseCost: 2000,  costScale: 1.7, type: 'mult',    value: 2 },
-  { id: 'rabbit',    name: "Rabbit's Foot",     desc: '+5x multiplier',           baseCost: 10000, costScale: 1.8, type: 'mult',    value: 5 },
   { id: 'penny',     name: 'Penny Pincher',     desc: '-5% cost discount',        baseCost: 300,   costScale: 1.4, type: 'discount', value: 5 },
   { id: 'tight',     name: 'Tight Budget',      desc: '-10% cost discount',       baseCost: 1500,  costScale: 1.5, type: 'discount', value: 10 },
   { id: 'frugal',    name: 'Frugal Mind',       desc: '-15% cost discount',       baseCost: 7500,  costScale: 1.6, type: 'discount', value: 15 },
@@ -49,6 +45,8 @@ function defaultState() {
     money: 0,
     totalSpins: 0,
     bestReward: 0,
+    totalLifetimeMoney: 0,
+    rebirthCount: 0,
     activeSpinnerId: 'wood',
     unlockedSpinners: ['wood'],
     purchasedUpgrades: [],
@@ -63,7 +61,10 @@ function loadState() {
     if (raw) {
       const saved = JSON.parse(raw);
       const def = defaultState();
-      return { ...def, ...saved };
+      const merged = { ...def, ...saved };
+      const validIds = new Set(UPGRADES.map(u => u.id));
+      merged.purchasedUpgrades = merged.purchasedUpgrades.filter(id => validIds.has(id));
+      return merged;
     }
   } catch (_) {}
   return defaultState();
@@ -104,14 +105,16 @@ function getSpinnerCost(spinner) {
   return Math.ceil(Math.max(cost, 0));
 }
 
-function computeBonusMult() {
-  return UPGRADES
-    .filter(u => u.type === 'mult')
-    .reduce((sum, u) => sum + u.value * getUpgradeCount(u.id), 0);
+function getRebirthMultiplier() {
+  return Math.pow(2, state.rebirthCount);
+}
+
+function getRebirthCost() {
+  return 5000 * Math.pow(2, state.rebirthCount);
 }
 
 function computeMultiplier() {
-  return getActiveSpinner().mult * (1 + computeBonusMult());
+  return getActiveSpinner().mult * getRebirthMultiplier();
 }
 
 function computeDiscount() {
@@ -195,6 +198,7 @@ function playRaritySound(rarity) {
 }
 
 function playBuySound() { playBeep(600, 100); }
+function playRebirthSound() { playBeep(800, 300); playBeep(1000, 200); }
 
 function generateWheel(odds) {
   const container = $('spinner-slices');
@@ -233,6 +237,7 @@ function updateHeader() {
   $('spins-display').textContent = state.totalSpins;
   $('mult-display').textContent = mult.toFixed(2) + 'x';
   $('best-display').textContent = formatMoney(state.bestReward);
+  $('rebirth-display').textContent = '×' + getRebirthMultiplier();
   const streakEl = $('streak-display');
   if (streakEl) streakEl.textContent = 'Session: ' + sessionSpins;
 }
@@ -352,6 +357,32 @@ function renderSpinners() {
   });
 }
 
+function renderRebirth() {
+  const container = $('panel-rebirth');
+  const mult = getRebirthMultiplier();
+  const cost = getRebirthCost();
+  const affordable = state.totalLifetimeMoney >= cost;
+  const nextMult = mult * 2;
+
+  container.innerHTML = `
+    <div class="rebirth-section">
+      <div class="rebirth-title">Rebirth</div>
+      <div class="rebirth-desc">
+        Resets your money, spinners, and upgrades but permanently doubles all earnings.
+        Each rebirth adds another ×2. Your total spins and best reward are preserved.
+      </div>
+      <div class="rebirth-stats">Current Multiplier: ×${mult}</div>
+      <div class="rebirth-stats">Rebirths: ${state.rebirthCount}</div>
+      <div class="rebirth-stats">Lifetime Earnings: ${formatMoney(state.totalLifetimeMoney)}</div>
+      <div class="rebirth-cost">Next Rebirth at ${formatMoney(cost)} lifetime earnings${affordable ? '' : '  (need ' + formatMoney(cost - state.totalLifetimeMoney) + ' more)'}</div>
+      <button class="btn rebirth-btn" id="rebirth-btn"${affordable ? '' : ' disabled'}>Rebirth (×${mult} → ×${nextMult})</button>
+    </div>
+  `;
+
+  const btn = container.querySelector('#rebirth-btn');
+  if (btn) btn.addEventListener('click', doRebirth);
+}
+
 function renderAll() {
   updateHeader();
   renderOdds();
@@ -360,6 +391,7 @@ function renderAll() {
   refreshButtons();
   renderUpgrades();
   renderSpinners();
+  renderRebirth();
 }
 
 function finishSpin() {
@@ -369,6 +401,7 @@ function finishSpin() {
   spinTimeout = null;
 
   state.money += amount;
+  state.totalLifetimeMoney += amount;
   state.totalSpins++;
   sessionSpins++;
   if (amount > state.bestReward) state.bestReward = amount;
@@ -473,6 +506,22 @@ function equipSpinner(sp) {
   saveState();
 }
 
+function doRebirth() {
+  const cost = getRebirthCost();
+  if (state.totalLifetimeMoney < cost) return;
+
+  state.rebirthCount++;
+  state.money = 0;
+  state.activeSpinnerId = 'wood';
+  state.unlockedSpinners = ['wood'];
+  state.purchasedUpgrades = [];
+  cumulativeAngle = 0;
+
+  playRebirthSound();
+  renderAll();
+  saveState();
+}
+
 function toggleAutoSpin() {
   state.autoSpinEnabled = !state.autoSpinEnabled;
   if (state.autoSpinEnabled) lastAutoSpin = performance.now();
@@ -494,6 +543,18 @@ function switchTab(tab) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelector('.tab-btn[data-tab="' + tab + '"]').classList.add('active');
   $('panel-' + tab).classList.add('active');
+}
+
+function resetAll() {
+  if (!confirm('Reset all progress? This cannot be undone.')) return;
+  state = defaultState();
+  cumulativeAngle = 0;
+  pendingResult = null;
+  spinTimeout = null;
+  spinning = false;
+  sessionSpins = 0;
+  saveState();
+  renderAll();
 }
 
 function gameLoop(timestamp) {
@@ -521,14 +582,17 @@ function init() {
   $('spin-btn').addEventListener('click', doSpin);
   $('autospin-btn').addEventListener('click', toggleAutoSpin);
   $('sound-btn').addEventListener('click', toggleSound);
+  const resetBtn = $('reset-btn');
+  if (resetBtn) resetBtn.addEventListener('click', resetAll);
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); doSpin(); }
     if (e.key === 'b' || e.key === 'B') { e.preventDefault(); toggleAutoSpin(); }
-    if (e.key === 'u' || e.key === 'U') { e.preventDefault(); const tab = 'upgrades'; switchTab(tab); }
-    if (e.key === 's' || e.key === 'S') { e.preventDefault(); const tab = 'spinners'; switchTab(tab); }
+    if (e.key === 'u' || e.key === 'U') { e.preventDefault(); switchTab('upgrades'); }
+    if (e.key === 's' || e.key === 'S') { e.preventDefault(); switchTab('spinners'); }
+    if (e.key === 'r' || e.key === 'R') { e.preventDefault(); switchTab('rebirth'); }
     if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleSound(); }
   });
   renderAll();
