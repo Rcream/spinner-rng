@@ -153,6 +153,21 @@ header {
   animation: result-pop 0.45s ease-out;
 }
 
+#spinner-visual::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 15px solid var(--bg);
+  pointer-events: none;
+  z-index: 9;
+}
+
 #spinner-visual::after {
   content: '';
   position: absolute;
