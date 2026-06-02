@@ -100,35 +100,46 @@ header {
   width: 180px;
   height: 180px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   position: relative;
   transition: box-shadow 0.4s ease, border-color 0.4s ease;
-  background: var(--surface2);
+  background: transparent;
   border: 2px solid var(--border);
   flex-shrink: 0;
 }
 
+/* Tier border colors */
+#spinner-visual.tier-wood    { border-color: var(--border); }
+#spinner-visual.tier-stone   { border-color: #555; }
+#spinner-visual.tier-iron    { border-color: #777; }
+#spinner-visual.tier-gold    { border-color: var(--rarity-legendary); }
+#spinner-visual.tier-diamond { border-color: var(--rarity-rare); }
+#spinner-visual.tier-emerald { border-color: var(--rarity-uncommon); animation: emerald-pulse 2s ease-in-out infinite; }
+
+/* Rarity glow overrides tier border */
 #spinner-visual.rarity-common {
   box-shadow: 0 0 20px var(--glow-common);
-  border-color: var(--rarity-common);
+  border-color: var(--rarity-common) !important;
 }
 #spinner-visual.rarity-uncommon {
   box-shadow: 0 0 30px var(--glow-uncommon);
-  border-color: var(--rarity-uncommon);
+  border-color: var(--rarity-uncommon) !important;
 }
 #spinner-visual.rarity-rare {
   box-shadow: 0 0 40px var(--glow-rare);
-  border-color: var(--rarity-rare);
+  border-color: var(--rarity-rare) !important;
 }
 #spinner-visual.rarity-epic {
   box-shadow: 0 0 50px var(--glow-epic);
-  border-color: var(--rarity-epic);
+  border-color: var(--rarity-epic) !important;
 }
 #spinner-visual.rarity-legendary {
   box-shadow: 0 0 60px var(--glow-legendary);
-  border-color: var(--rarity-legendary);
+  border-color: var(--rarity-legendary) !important;
+}
+
+@keyframes emerald-pulse {
+  0%, 100% { box-shadow: 0 0 6px var(--rarity-uncommon); }
+  50% { box-shadow: 0 0 20px var(--rarity-uncommon); }
 }
 
 @keyframes result-pop {
@@ -145,17 +156,16 @@ header {
 #spinner-visual::after {
   content: '';
   position: absolute;
-  top: -8px;
+  top: -11px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-top: 10px solid var(--text);
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 13px solid var(--text);
   pointer-events: none;
-  z-index: 5;
-  opacity: 0.6;
+  z-index: 10;
 }
 
 #spinner-rotator {
@@ -164,6 +174,8 @@ header {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
   will-change: transform;
   pointer-events: none;
 }
@@ -172,40 +184,33 @@ header {
   transition: transform 1.8s cubic-bezier(0.12, 0.85, 0.25, 1);
 }
 
-#spinner-ring {
-  width: 80%;
-  height: 80%;
+#spinner-slices {
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
   border-radius: 50%;
-  border: 2px solid var(--border);
-  opacity: 0.3;
+}
+
+.slice {
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  transition: filter 0.3s, opacity 0.3s;
+}
+
+.slice.winner {
+  filter: brightness(1.5) drop-shadow(0 0 8px currentColor);
+  z-index: 1;
+}
+
+#spinner-ring {
+  width: 74%;
+  height: 74%;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.06);
   pointer-events: none;
   flex-shrink: 0;
-}
-
-.tick-mark {
-  position: absolute;
-  width: 2px;
-  height: 10px;
-  background: var(--text-dim);
-  top: 50%;
-  left: 50%;
-  margin-left: -1px;
-  margin-top: -5px;
-  border-radius: 1px;
-  pointer-events: none;
-  transform-origin: 1px 5px;
-  opacity: 0.5;
-}
-
-#spinner-inner {
-  width: 40%;
-  height: 40%;
-  border-radius: 50%;
-  background: var(--text-dim);
-  opacity: 0.15;
-  pointer-events: none;
-  position: relative;
-  z-index: 1;
+  z-index: 3;
 }
 
 #spinner-result-label {
@@ -213,13 +218,20 @@ header {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 18px;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border-radius: 50%;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   pointer-events: none;
   color: var(--text);
-  z-index: 2;
+  z-index: 4;
 }
 
 #rarity-bar {
@@ -439,48 +451,6 @@ header {
   transform: none;
 }
 
-.tier-wood #spinner-ring {
-  border-width: 3px;
-  border-style: double;
-  opacity: 0.4;
-}
-
-.tier-stone #spinner-ring {
-  border-width: 3px;
-  border-style: dashed;
-  opacity: 0.35;
-}
-
-.tier-iron #spinner-ring {
-  border-width: 3px;
-  opacity: 0.45;
-}
-
-.tier-gold #spinner-ring {
-  border-color: var(--rarity-legendary);
-  border-width: 3px;
-  opacity: 0.6;
-}
-
-.tier-diamond #spinner-ring {
-  border-width: 3px;
-  border-style: dotted;
-  opacity: 0.6;
-  border-color: var(--rarity-rare);
-}
-
-.tier-emerald #spinner-ring {
-  border-width: 3px;
-  animation: emerald-pulse 2s ease-in-out infinite;
-  border-color: var(--rarity-uncommon);
-  opacity: 0.7;
-}
-
-@keyframes emerald-pulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
-}
-
 .panel::-webkit-scrollbar {
   width: 4px;
 }
@@ -495,7 +465,7 @@ header {
 @media (max-width: 420px) {
   #app { padding: 8px 10px 24px; }
   #spinner-visual { width: 150px; height: 150px; }
-  #spinner-result-label { font-size: 15px; }
+  #spinner-result-label { width: 48px; height: 48px; font-size: 11px; }
   .btn-primary { font-size: 16px; padding: 12px 36px; }
   .stat-value { font-size: 12px; }
   #panel-upgrades, #panel-spinners { max-height: 200px; }
@@ -503,6 +473,6 @@ header {
 
 @media (min-width: 600px) {
   #spinner-visual { width: 200px; height: 200px; }
-  #spinner-result-label { font-size: 22px; }
+  #spinner-result-label { width: 64px; height: 64px; font-size: 15px; }
   .panel { max-height: 300px; }
 }

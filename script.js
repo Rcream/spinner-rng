@@ -196,24 +196,35 @@ function playRaritySound(rarity) {
 
 function playBuySound() { playBeep(600, 100); }
 
-function generateTicks() {
-  const rotator = $('spinner-rotator');
-  rotator.querySelectorAll('.tick-mark').forEach(el => el.remove());
+function generateWheel(odds) {
+  const container = $('spinner-slices');
+  container.innerHTML = '';
 
-  const vis = $('spinner-visual');
-  const size = vis.offsetWidth || 180;
-  const ringRadius = size * 0.38;
+  let startAngle = 0;
+  RARITIES.forEach(r => {
+    const sliceAngle = odds[r] * 360;
+    if (sliceAngle < 0.1) return;
 
-  const idx = getSpinnerIndex();
-  const count = 8 + idx * 2;
+    const endAngle = startAngle + sliceAngle;
 
-  for (let i = 0; i < count; i++) {
-    const angle = (i / count) * 360;
-    const tick = document.createElement('div');
-    tick.className = 'tick-mark';
-    tick.style.transform = 'translateY(-' + ringRadius + 'px) rotate(' + angle + 'deg)';
-    rotator.appendChild(tick);
-  }
+    const steps = Math.max(2, Math.ceil(sliceAngle / 3));
+    const pts = ['50% 50%'];
+    for (let i = 0; i <= steps; i++) {
+      const a = (startAngle + (i / steps) * sliceAngle) * Math.PI / 180;
+      pts.push(`${(50 + 50 * Math.sin(a)).toFixed(2)}% ${(50 - 50 * Math.cos(a)).toFixed(2)}%`);
+    }
+    pts.push('50% 50%');
+
+    const div = document.createElement('div');
+    div.className = 'slice';
+    div.style.clipPath = `polygon(${pts.join(',')})`;
+    div.style.background = RARITY_COLORS[r];
+    div.style.color = RARITY_COLORS[r];
+    div.dataset.rarity = r;
+    container.appendChild(div);
+
+    startAngle = endAngle;
+  });
 }
 
 function updateHeader() {
@@ -343,6 +354,7 @@ function renderSpinners() {
 function renderAll() {
   updateHeader();
   renderOdds();
+  generateWheel(computeOdds());
   updateSpinnerVisual();
   refreshButtons();
   renderUpgrades();
@@ -366,6 +378,9 @@ function finishSpin() {
   showReward(rarity, amount);
   playRaritySound(rarity);
 
+  const winnerSlice = document.querySelector(`.slice[data-rarity="${rarity}"]`);
+  if (winnerSlice) winnerSlice.classList.add('winner');
+
   const vis = $('spinner-visual');
   RARITIES.forEach(r => vis.classList.remove(RARITY_CLASS[r]));
   vis.classList.add(RARITY_CLASS[rarity]);
@@ -373,6 +388,7 @@ function finishSpin() {
   setTimeout(() => {
     RARITIES.forEach(r => vis.classList.remove(RARITY_CLASS[r]));
     vis.classList.remove('reveal');
+    document.querySelectorAll('.slice.winner').forEach(el => el.classList.remove('winner'));
   }, 800);
 
   spinning = false;
@@ -391,10 +407,25 @@ function doSpin() {
   const mult = computeMultiplier();
   const amount = Math.floor(rewards[rarity] * mult);
 
-  const extraDeg = 1080 + Math.random() * 720;
-  const startAngle = cumulativeAngle;
+  let midAngle = 0;
+  let a = 0;
+  for (const r of RARITIES) {
+    const angle = odds[r] * 360;
+    if (r === rarity) {
+      midAngle = a + angle / 2;
+      break;
+    }
+    a += angle;
+  }
+
+  const targetMod = (360 - midAngle) % 360;
+  const currentMod = ((cumulativeAngle % 360) + 360) % 360;
+  const extraForLanding = (targetMod - currentMod + 360) % 360;
+  const numFullSpins = 3 + Math.floor(Math.random() * 3);
+  const extraDeg = numFullSpins * 360 + extraForLanding;
   cumulativeAngle += extraDeg;
 
+  document.querySelectorAll('.slice.winner').forEach(el => el.classList.remove('winner'));
   RARITIES.forEach(r => $('spinner-visual').classList.remove(RARITY_CLASS[r]));
   $('spinner-visual').classList.remove('reveal');
 
@@ -428,7 +459,6 @@ function buySpinner(sp) {
   state.money -= cost;
   state.unlockedSpinners.push(sp.id);
   state.activeSpinnerId = sp.id;
-  generateTicks();
   playBuySound();
   renderAll();
   saveState();
@@ -437,7 +467,6 @@ function buySpinner(sp) {
 function equipSpinner(sp) {
   if (!state.unlockedSpinners.includes(sp.id)) return;
   state.activeSpinnerId = sp.id;
-  generateTicks();
   playBeep(440, 80);
   renderAll();
   saveState();
@@ -488,7 +517,6 @@ function init() {
   if (state.soundEnabled) {
     try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (_) {}
   }
-  generateTicks();
   $('spin-btn').addEventListener('click', doSpin);
   $('autospin-btn').addEventListener('click', toggleAutoSpin);
   $('sound-btn').addEventListener('click', toggleSound);
