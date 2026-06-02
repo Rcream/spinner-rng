@@ -44,4 +44,4 @@ A minimalist browser-based RNG spinner clicker game built with vanilla HTML, CSS
 ## Made using
 
 - Perplexity Ai
--Opencode Desktop
+- Opencode Desktop
