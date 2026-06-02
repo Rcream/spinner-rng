@@ -11,12 +11,12 @@ const RARITY_CLASS = { common: 'rarity-common', uncommon: 'rarity-uncommon', rar
 const RARITY_COLORS = { common: '#9e9e9e', uncommon: '#4caf50', rare: '#2196f3', epic: '#9c27b0', legendary: '#ffb300' };
 
 const SPINNERS = [
-  { id: 'wood',    name: 'Wood',    cost: 0,      mult: 1,   luckBoost: 0,  tierClass: 'tier-wood' },
-  { id: 'stone',   name: 'Stone',   cost: 500,    mult: 1.2, luckBoost: 1,  tierClass: 'tier-stone' },
-  { id: 'iron',    name: 'Iron',    cost: 2000,   mult: 1.5, luckBoost: 2,  tierClass: 'tier-iron' },
-  { id: 'gold',    name: 'Gold',    cost: 8000,   mult: 2,   luckBoost: 3,  tierClass: 'tier-gold' },
-  { id: 'diamond', name: 'Diamond', cost: 25000,  mult: 3,   luckBoost: 5,  tierClass: 'tier-diamond' },
-  { id: 'emerald', name: 'Emerald', cost: 100000, mult: 5,   luckBoost: 8,  tierClass: 'tier-emerald' },
+  { id: 'wood',    name: 'Wood',    cost: 0,      mult: 1,   luckBoost: 0,  tierClass: 'tier-wood',    pointerColor: '#8d6e63' },
+  { id: 'stone',   name: 'Stone',   cost: 500,    mult: 1.2, luckBoost: 1,  tierClass: 'tier-stone',   pointerColor: '#9e9e9e' },
+  { id: 'iron',    name: 'Iron',    cost: 2000,   mult: 1.5, luckBoost: 2,  tierClass: 'tier-iron',    pointerColor: '#90a4ae' },
+  { id: 'gold',    name: 'Gold',    cost: 8000,   mult: 2,   luckBoost: 3,  tierClass: 'tier-gold',    pointerColor: '#ffb300' },
+  { id: 'diamond', name: 'Diamond', cost: 25000,  mult: 3,   luckBoost: 5,  tierClass: 'tier-diamond', pointerColor: '#4fc3f7' },
+  { id: 'emerald', name: 'Emerald', cost: 100000, mult: 5,   luckBoost: 8,  tierClass: 'tier-emerald', pointerColor: '#81c784' },
 ];
 
 const UPGRADES = [
@@ -254,6 +254,7 @@ function updateSpinnerVisual() {
 
   SPINNERS.forEach(s => vis.classList.remove(s.tierClass));
   if (spinner.tierClass) vis.classList.add(spinner.tierClass);
+  vis.style.setProperty('--pointer-color', spinner.pointerColor);
 }
 
 function showReward(rarity, amount) {

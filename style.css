@@ -156,14 +156,16 @@ header {
 #spinner-visual::after {
   content: '';
   position: absolute;
-  top: -11px;
+  top: -6px;
   left: 50%;
   transform: translateX(-50%);
   width: 0;
   height: 0;
   border-left: 9px solid transparent;
   border-right: 9px solid transparent;
-  border-top: 13px solid var(--text);
+  border-top-width: 13px;
+  border-top-style: solid;
+  border-top-color: var(--pointer-color, var(--text));
   pointer-events: none;
   z-index: 10;
 }
