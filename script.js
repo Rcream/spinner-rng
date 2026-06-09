@@ -384,6 +384,49 @@ function renderRebirth() {
   if (btn) btn.addEventListener('click', doRebirth);
 }
 
+function renderGoals() {
+  const container = $('panel-goals');
+
+  const goals = [
+    {
+      id: 'money',
+      desc: 'Earn $1B in lifetime earnings',
+      done: state.totalLifetimeMoney >= 1_000_000_000,
+      progress: 'Lifetime: ' + formatMoney(state.totalLifetimeMoney) + ' / $1B',
+    },
+    {
+      id: 'rebirths',
+      desc: 'Reach 5 rebirths',
+      done: state.rebirthCount >= 5,
+      progress: 'Rebirths: ' + state.rebirthCount + ' / 5',
+    },
+    {
+      id: 'spinners',
+      desc: 'Unlock all spinner types',
+      done: state.unlockedSpinners.length >= SPINNERS.length,
+      progress: 'Unlocked: ' + state.unlockedSpinners.length + ' / ' + SPINNERS.length,
+    },
+    {
+      id: 'legendary',
+      desc: 'Hit a Legendary reward',
+      done: state.bestReward >= BASE_REWARDS.legendary,
+      progress: 'Best: ' + formatMoney(state.bestReward),
+    },
+  ];
+
+  const allDone = goals.every(g => g.done);
+
+  container.innerHTML = goals.map(g => `
+    <div class="goal-item${g.done ? ' complete' : ''}">
+      <div class="goal-info">
+        <div class="goal-name">${g.done ? '✓' : '○'} ${g.desc}</div>
+        <div class="goal-desc">${g.progress}</div>
+      </div>
+      <div class="goal-status">${g.done ? 'Complete' : 'Incomplete'}</div>
+    </div>
+  `).join('') + (allDone ? '<div class="goal-endgame">You\'ve basically beaten this version of the game! You can keep playing for fun, but you\'ve reached all main goals.</div>' : '');
+}
+
 function renderAll() {
   updateHeader();
   renderOdds();
@@ -393,6 +436,7 @@ function renderAll() {
   renderUpgrades();
   renderSpinners();
   renderRebirth();
+  renderGoals();
 }
 
 function finishSpin() {
@@ -580,6 +624,7 @@ function init() {
     if (e.key === 'u' || e.key === 'U') { e.preventDefault(); switchTab('upgrades'); }
     if (e.key === 's' || e.key === 'S') { e.preventDefault(); switchTab('spinners'); }
     if (e.key === 'r' || e.key === 'R') { e.preventDefault(); switchTab('rebirth'); }
+    if (e.key === 'g' || e.key === 'G') { e.preventDefault(); switchTab('goals'); }
     if (e.key === 'm' || e.key === 'M') { e.preventDefault(); toggleSound(); }
   });
   renderAll();
